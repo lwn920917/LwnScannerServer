@@ -1,24 +1,69 @@
+const cors = require('cors');
+const axios = require('axios'); // 导入axios库
 const express = require('express');
-const cors = require('cors'); // 引入cors包
 const app = express();
+app.use(cors());
+// 增加 body-parser 的限制
+app.use(express.json({ limit: '50mb' }));
+require('dotenv').config();
+
 
 const PORT = 3334;
-const OCR_RESULT = `\\begin{tabular}{|c|c|}\n\\hline$x$ & $y$ \\\\\n\\hline 20 & 12.4 \\\\\n30 & 24.8 \\\\\n40 & 49.6 \\\\\n50 & 99.2 \\\\\n60 & 198.4 \\\\\n70 & 396.8 \\\\\n80 & 793.6 \\\\\n\\hline\n\\end{tabular}`;
 
-app.use(cors()); // 在这里使用cors中间件，允许所有跨域请求
-app.use(express.json()); // 用于解析JSON格式的请求体
+// Mathpix API 凭证
+const APP_ID = process.env.MATHPIX_APP_ID;
+const APP_KEY = process.env.MATHPIX_APP_KEY;
 
-// 提供一个名为 upload_image 的POST接口
-app.post('/upload_image', (req, res) => {
-    // 这里可以添加逻辑来处理上传的图片，例如保存图片到服务器
-    
-    // 返回一段JSON数据
-    res.json({
-        status: 'success',
-        message: 'Image uploaded successfully',
-        // 这里可以添加更多返回信息，如图片的存储信息等
-        text:OCR_RESULT,
-    });
+app.post('/upload_image', async (req, res) => {
+    //console.log(req.body);
+    console.log("upload_image");
+    try {
+        const { base64 } = req.body;
+        if (!base64) {
+            return res.status(400).json({ status: 'error', message: 'Base64 data is required' });
+        }
+
+        // 构建请求体
+        const requestBody = {
+            src: `data:image/png;base64,${base64}`,
+            formats: [
+                'text',
+                //'data',
+                //'html',
+                //'latex_styled'
+            ],
+            "data_options": {
+                /*  "include_svg": true,
+                 "include_table_html": true,
+                 "include_latex": true,
+                 "include_tsv": true,
+                 "include_asciimath": true,
+                 "include_mathml": true, */
+            }
+        };
+
+        // 发送请求到Mathpix API
+        const response = await axios.post('https://api.mathpix.com/v3/text', requestBody, {
+            headers: {
+                'app_id': APP_ID,
+                'app_key': APP_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+        //console.log(response.data)
+        // 处理Mathpix API响应
+        const { text, data } = response.data;
+        console.log(text);
+        res.json({
+            status: 'success',
+            message: 'Image processed successfully',
+            text: text,
+            data: data,
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ status: 'error', message: 'Failed to process image' });
+    }
 });
 
 app.listen(PORT, () => {
