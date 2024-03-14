@@ -14,6 +14,10 @@ const PORT = 3334;
 const APP_ID = process.env.MATHPIX_APP_ID;
 const APP_KEY = process.env.MATHPIX_APP_KEY;
 
+app.get('/', (req, res) => {
+    res.json({ status: 'success', message: 'Welcome to the Mathpix API Service!' });
+});
+
 app.post('/upload_image', async (req, res) => {
     //console.log(req.body);
     console.log("upload_image");
