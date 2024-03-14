@@ -1,14 +1,19 @@
 const cors = require('cors');
-const axios = require('axios'); // 导入axios库
+const axios = require('axios');
 const express = require('express');
+const https = require('https');
+const fs = require('fs');
 const app = express();
 app.use(cors());
-// 增加 body-parser 的限制
 app.use(express.json({ limit: '50mb' }));
 require('dotenv').config();
 
-
 const PORT = 3334;
+
+// SSL 证书路径
+const privateKey = fs.readFileSync('/var/www/tslwn.com.cn.key', 'utf8');
+const certificate = fs.readFileSync('/var/www/tslwn.com.cn.pem', 'utf8');
+const credentials = { key: privateKey, cert: certificate };
 
 // Mathpix API 凭证
 const APP_ID = process.env.MATHPIX_APP_ID;
@@ -19,7 +24,6 @@ app.get('/', (req, res) => {
 });
 
 app.post('/upload_image', async (req, res) => {
-    //console.log(req.body);
     console.log("upload_image");
     try {
         const { base64 } = req.body;
@@ -27,26 +31,14 @@ app.post('/upload_image', async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Base64 data is required' });
         }
 
-        // 构建请求体
         const requestBody = {
             src: `data:image/png;base64,${base64}`,
-            formats: [
-                'text',
-                //'data',
-                //'html',
-                //'latex_styled'
-            ],
+            formats: ['text'],
             "data_options": {
-                /*  "include_svg": true,
-                 "include_table_html": true,
-                 "include_latex": true,
-                 "include_tsv": true,
-                 "include_asciimath": true,
-                 "include_mathml": true, */
+                // 这里可以根据需要开启更多的选项
             }
         };
 
-        // 发送请求到Mathpix API
         const response = await axios.post('https://api.mathpix.com/v3/text', requestBody, {
             headers: {
                 'app_id': APP_ID,
@@ -54,8 +46,7 @@ app.post('/upload_image', async (req, res) => {
                 'Content-Type': 'application/json'
             }
         });
-        //console.log(response.data)
-        // 处理Mathpix API响应
+
         const { text, data } = response.data;
         console.log(text);
         res.json({
@@ -70,6 +61,9 @@ app.post('/upload_image', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on xxx:${PORT}`);
+// 创建 HTTPS 服务器
+const httpsServer = https.createServer(credentials, app);
+
+httpsServer.listen(PORT, () => {
+    console.log(`Server is running on https://xxx:${PORT}`);
 });
