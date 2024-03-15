@@ -20,7 +20,7 @@ const APP_ID = process.env.MATHPIX_APP_ID;
 const APP_KEY = process.env.MATHPIX_APP_KEY;
 
 app.get('/', (req, res) => {
-    res.json({ status: 'success', message: 'Welcome to the Mathpix API Service!' });
+    res.json({ status: 'success', message: 'Welcome to the API Service!' });
 });
 
 app.post('/upload_image', async (req, res) => {
@@ -36,7 +36,8 @@ app.post('/upload_image', async (req, res) => {
             formats: ['text'],
             "data_options": {
                 // 这里可以根据需要开启更多的选项
-            }
+            },
+            enable_tables_fallback: true
         };
 
         const response = await axios.post('https://api.mathpix.com/v3/text', requestBody, {
