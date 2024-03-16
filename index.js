@@ -34,7 +34,8 @@ app.post('/upload_image', async (req, res) => {
         // 1. 调用 v3/text API 获取图像的文本内容 text
         const response = await axios.post('https://api.mathpix.com/v3/text', {
             src: `data:image/png;base64,${base64}`,
-            formats: ['text']
+            formats: ['text'],
+            enable_tables_fallback: true
         }, {
             headers: {
                 'app_id': APP_ID,
